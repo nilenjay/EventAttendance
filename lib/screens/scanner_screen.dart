@@ -39,6 +39,9 @@ class ScannerScreen extends StatelessWidget {
               final code = barcode.barcodes.first.rawValue;
 
               if (code != null) {
+
+                debugPrint("📷 QR Scanned: $code");
+
                 context.read<AttendanceBloc>().add(QRScanned(code));
               }
             },
