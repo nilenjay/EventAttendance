@@ -1,20 +1,32 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 class AttendanceService {
   Future<void> markAttendance(String studentNumber) async {
+    debugPrint("🌐 Sending student number: $studentNumber");
+
     const url = "https://YOUR_BACKEND_ENDPOINT";
 
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "studentNumber": studentNumber,
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "studentNumber": studentNumber,
+        }),
+      );
 
-    if (response.statusCode != 200) {
-      throw Exception("Failed to mark attendance");
+      debugPrint("📡 Status Code: ${response.statusCode}");
+      debugPrint("📦 Response Body: ${response.body}");
+
+      if (response.statusCode != 200) {
+        throw Exception("Backend returned ${response.statusCode}");
+      }
+    } catch (e) {
+      debugPrint("🔥 Network error: $e");
+      rethrow;
     }
   }
+
 }
