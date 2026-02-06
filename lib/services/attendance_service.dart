@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 
 class AttendanceService {
   Future<void> markAttendance(String studentNumber) async {
-    // 🔴 Replace with your real endpoint
     const url = "https://YOUR_BACKEND_ENDPOINT";
 
     final response = await http.post(
