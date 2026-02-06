@@ -6,12 +6,14 @@ class AttendanceService {
   Future<void> markAttendance(String studentNumber) async {
     debugPrint("🌐 Sending student number: $studentNumber");
 
-    const url = "https://YOUR_BACKEND_ENDPOINT";
+    const url = "https://api.programmingclub.live/api/attendance/day1/";
 
     try {
       final response = await http.post(
         Uri.parse(url),
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: jsonEncode({
           "studentNumber": studentNumber,
         }),
@@ -20,7 +22,7 @@ class AttendanceService {
       debugPrint("📡 Status Code: ${response.statusCode}");
       debugPrint("📦 Response Body: ${response.body}");
 
-      if (response.statusCode != 200) {
+      if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception("Backend returned ${response.statusCode}");
       }
     } catch (e) {
@@ -28,5 +30,4 @@ class AttendanceService {
       rethrow;
     }
   }
-
 }
