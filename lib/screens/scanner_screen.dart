@@ -11,6 +11,72 @@ class ScannerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void _showManualEntrySheet(BuildContext context) {
+      final controller = TextEditingController();
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (context) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Enter Student Number",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: "e.g. 2410010",
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final studentNumber =
+                      controller.text.trim();
+
+                      if (studentNumber.isNotEmpty) {
+                        Navigator.pop(context);
+
+                        context
+                            .read<AttendanceBloc>()
+                            .add(QRScanned(studentNumber));
+                      }
+                    },
+                    child: const Text("Submit"),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("QR Attendance"),
@@ -18,7 +84,7 @@ class ScannerScreen extends StatelessWidget {
 
       body: BlocConsumer<AttendanceBloc, AttendanceState>(
         listener: (context, state) {
-          // ✅ Success
+
           if (state.success) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -27,8 +93,6 @@ class ScannerScreen extends StatelessWidget {
               ),
             );
           }
-
-          // ❌ Error
           if (state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -69,6 +133,19 @@ class ScannerScreen extends StatelessWidget {
                           .read<AttendanceBloc>()
                           .add(DayChanged(value));
                     }
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  icon: const Icon(Icons.keyboard),
+                  label: const Text("Enter Student Number Manually"),
+                  onPressed: () {
+                    _showManualEntrySheet(context);
                   },
                 ),
               ),
