@@ -45,7 +45,6 @@ class ScannerScreen extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              // 🔽 DAY SELECTOR
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: DropdownButtonFormField<int>(
@@ -75,17 +74,14 @@ class ScannerScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 12),
-
-              // 📷 SCANNER OR LOADING
               Expanded(
                 child: state.isLoading
                     ? const Center(
                   child: CircularProgressIndicator(),
                 )
                     : MobileScanner(
-                  onDetect: (barcodeCapture) {
-                    final code =
-                        barcodeCapture.barcodes.first.rawValue;
+                  onDetect: state.isScanningEnable?(barcodeCapture) {
+                    final code = barcodeCapture.barcodes.first.rawValue;
 
                     if (code != null) {
                       debugPrint("📷 QR Scanned: $code");
@@ -94,7 +90,8 @@ class ScannerScreen extends StatelessWidget {
                           .read<AttendanceBloc>()
                           .add(QRScanned(code));
                     }
-                  },
+                  }
+                  : null,
                 ),
               ),
             ],

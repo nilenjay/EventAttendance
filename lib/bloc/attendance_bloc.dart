@@ -20,7 +20,11 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       QRScanned event,
       Emitter<AttendanceState> emit,
       ) async {
-    emit(state.copyWith(isLoading: true, errorMessage: null));
+    if(!state.isScanningEnable){
+      return;
+    }
+    emit(state.copyWith(isScanningEnable: false,isLoading: true, errorMessage: null));
+
 
     try {
       await service.markAttendance(
@@ -31,11 +35,13 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       emit(state.copyWith(
         isLoading: false,
         success: true,
+        isScanningEnable: true,
       ));
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
         errorMessage: e.toString(),
+        isScanningEnable: true,
       ));
     }
   }
