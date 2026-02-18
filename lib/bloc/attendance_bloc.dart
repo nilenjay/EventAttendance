@@ -1,26 +1,42 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../services/attendance_service.dart';
 import 'attendance_event.dart';
 import 'attendance_state.dart';
-import '../services/attendance_service.dart';
 
 class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   final AttendanceService service;
 
-  AttendanceBloc(this.service) : super(AttendanceInitial()) {
+  AttendanceBloc(this.service) : super(const AttendanceState()) {
     on<QRScanned>(_onQRScanned);
+    on<DayChanged>(_onDayChanged);
+  }
+
+  void _onDayChanged(DayChanged event, Emitter<AttendanceState> emit) {
+    emit(state.copyWith(selectedDay: event.day));
   }
 
   Future<void> _onQRScanned(
       QRScanned event,
       Emitter<AttendanceState> emit,
       ) async {
-    emit(AttendanceLoading());
+    emit(state.copyWith(isLoading: true, errorMessage: null));
 
     try {
-      await service.markAttendance(event.studentNumber);
-      emit(AttendanceSuccess());
+      await service.markAttendance(
+        studentNumber: event.studentNumber,
+        day: state.selectedDay,
+      );
+
+      emit(state.copyWith(
+        isLoading: false,
+        success: true,
+      ));
     } catch (e) {
-      emit(AttendanceFailure(e.toString()));
+      emit(state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString(),
+      ));
     }
   }
 }

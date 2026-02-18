@@ -12,39 +12,92 @@ class ScannerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("QR Attendance")),
+      appBar: AppBar(
+        title: const Text("QR Attendance"),
+      ),
 
       body: BlocConsumer<AttendanceBloc, AttendanceState>(
         listener: (context, state) {
-          if (state is AttendanceSuccess) {
+          // ✅ Success
+          if (state.success) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Attendance marked ✅")),
+              const SnackBar(
+                content: Text("Attendance marked ✅"),
+                backgroundColor: Colors.green,
+              ),
             );
           }
 
-          if (state is AttendanceFailure) {
+          // ❌ Error
+          if (state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+              SnackBar(
+                content: Text(state.errorMessage!),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         },
 
         builder: (context, state) {
-          if (state is AttendanceLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          return Column(
+            children: [
 
-          return MobileScanner(
-            onDetect: (barcode) {
-              final code = barcode.barcodes.first.rawValue;
+              const SizedBox(height: 12),
 
-              if (code != null) {
+              // 🔽 DAY SELECTOR
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: DropdownButtonFormField<int>(
+                  value: state.selectedDay,
+                  decoration: const InputDecoration(
+                    labelText: "Select Day",
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text("Day 1"),
+                    ),
+                    DropdownMenuItem(
+                      value: 2,
+                      child: Text("Day 2"),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      context
+                          .read<AttendanceBloc>()
+                          .add(DayChanged(value));
+                    }
+                  },
+                ),
+              ),
 
-                debugPrint("📷 QR Scanned: $code");
+              const SizedBox(height: 12),
 
-                context.read<AttendanceBloc>().add(QRScanned(code));
-              }
-            },
+              // 📷 SCANNER OR LOADING
+              Expanded(
+                child: state.isLoading
+                    ? const Center(
+                  child: CircularProgressIndicator(),
+                )
+                    : MobileScanner(
+                  onDetect: (barcodeCapture) {
+                    final code =
+                        barcodeCapture.barcodes.first.rawValue;
+
+                    if (code != null) {
+                      debugPrint("📷 QR Scanned: $code");
+
+                      context
+                          .read<AttendanceBloc>()
+                          .add(QRScanned(code));
+                    }
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
