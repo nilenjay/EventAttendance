@@ -14,10 +14,12 @@ class QRScanned extends AttendanceEvent {
   List<Object?> get props => [studentNumber];
 }
 
-class DayChanged extends AttendanceEvent{
+class DayChanged extends AttendanceEvent {
   final int day;
+
   DayChanged(this.day);
+
   @override
-  // TODO: implement props
+  // FIX 4: removed stale TODO comment
   List<Object?> get props => [day];
 }

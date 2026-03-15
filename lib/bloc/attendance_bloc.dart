@@ -20,11 +20,14 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       QRScanned event,
       Emitter<AttendanceState> emit,
       ) async {
-    if(!state.isScanningEnable){
-      return;
-    }
-    emit(state.copyWith(isScanningEnable: false,isLoading: true, errorMessage: null));
+    if (!state.isScanningEnable) return;
 
+    emit(state.copyWith(
+      isScanningEnable: false,
+      isLoading: true,
+      clearError: true,   // explicitly wipe previous error
+      success: false,     // reset success before new attempt
+    ));
 
     try {
       await service.markAttendance(
@@ -32,17 +35,28 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         day: state.selectedDay,
       );
 
+      // FIX 3: emit success: true, then immediately reset it
+      // so the listener only fires once and won't re-trigger on future state changes
       emit(state.copyWith(
         isLoading: false,
         success: true,
         isScanningEnable: true,
       ));
+
+      // Reset success flag right away so it doesn't linger in state
+      await Future<void>.delayed(Duration.zero);
+      emit(state.copyWith(success: false));
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
         errorMessage: e.toString(),
         isScanningEnable: true,
+        success: false,
       ));
+
+      // Reset error after a beat so it doesn't re-trigger on future rebuilds
+      await Future<void>.delayed(Duration.zero);
+      emit(state.copyWith(clearError: true));
     }
   }
 }

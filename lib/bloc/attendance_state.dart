@@ -12,7 +12,7 @@ class AttendanceState extends Equatable {
     this.isLoading = false,
     this.errorMessage,
     this.success = false,
-    this.isScanningEnable=true,
+    this.isScanningEnable = true,
   });
 
   AttendanceState copyWith({
@@ -21,17 +21,17 @@ class AttendanceState extends Equatable {
     String? errorMessage,
     bool? success,
     bool? isScanningEnable,
+    bool clearError = false,
   }) {
     return AttendanceState(
       selectedDay: selectedDay ?? this.selectedDay,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
-      success: success ?? false,
-      isScanningEnable:
-        isScanningEnable ?? this.isScanningEnable,
+      success: success ?? this.success,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      isScanningEnable: isScanningEnable ?? this.isScanningEnable,
     );
   }
 
   @override
-  List<Object?> get props =>[selectedDay, isLoading, errorMessage, success,isScanningEnable];
+  List<Object?> get props => [selectedDay, isLoading, errorMessage, success, isScanningEnable];
 }

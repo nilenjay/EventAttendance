@@ -11,7 +11,7 @@ class ScannerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void _showManualEntrySheet(BuildContext context) {
+    void showManualEntrySheet(BuildContext context) {
       final controller = TextEditingController();
 
       showModalBottomSheet(
@@ -20,58 +20,72 @@ class ScannerScreen extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        builder: (context) {
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 20,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Enter Student Number",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+        builder: (sheetContext) {
+          return BlocBuilder<AttendanceBloc, AttendanceState>(
+            bloc: context.read<AttendanceBloc>(),
+            builder: (_, state) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 20,
+                  bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
                 ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Enter Student Number",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: controller,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "e.g. 2410010",
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: state.isScanningEnable
+                            ? () {
+                          final studentNumber = controller.text.trim();
 
-                const SizedBox(height: 20),
+                          if (studentNumber.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Please enter a student number."),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
 
-                TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: "e.g. 2410010",
-                  ),
+                          if (!RegExp(r'^\d+$').hasMatch(studentNumber)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Student number must contain digits only."),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
+
+                          Navigator.pop(sheetContext);
+                          context.read<AttendanceBloc>().add(QRScanned(studentNumber));
+                        }
+                            : null,
+                        child: const Text("Submit"),
+                      ),
+                    ),
+                  ],
                 ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final studentNumber =
-                      controller.text.trim();
-
-                      if (studentNumber.isNotEmpty) {
-                        Navigator.pop(context);
-
-                        context
-                            .read<AttendanceBloc>()
-                            .add(QRScanned(studentNumber));
-                      }
-                    },
-                    child: const Text("Submit"),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
       );
@@ -81,10 +95,11 @@ class ScannerScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text("QR Attendance"),
       ),
-
       body: BlocConsumer<AttendanceBloc, AttendanceState>(
+        listenWhen: (previous, current) =>
+        (!previous.success && current.success) ||
+            (previous.errorMessage == null && current.errorMessage != null),
         listener: (context, state) {
-
           if (state.success) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -102,40 +117,32 @@ class ScannerScreen extends StatelessWidget {
             );
           }
         },
-
         builder: (context, state) {
           return Column(
             children: [
-
               const SizedBox(height: 12),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: DropdownButtonFormField<int>(
-                  value: state.selectedDay,
+                  initialValue: state.selectedDay,
                   decoration: const InputDecoration(
                     labelText: "Select Day",
                     border: OutlineInputBorder(),
                   ),
+
                   items: const [
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text("Day 1"),
-                    ),
-                    DropdownMenuItem(
-                      value: 2,
-                      child: Text("Day 2"),
-                    ),
+                    DropdownMenuItem(value: 1, child: Text("Day 1")),
+                    DropdownMenuItem(value: 2, child: Text("Day 2")),
+                    DropdownMenuItem(value: 3, child: Text("Day 3")),
                   ],
                   onChanged: (value) {
                     if (value != null) {
-                      context
-                          .read<AttendanceBloc>()
-                          .add(DayChanged(value));
+                      context.read<AttendanceBloc>().add(DayChanged(value));
                     }
                   },
                 ),
               ),
+              const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ElevatedButton.icon(
@@ -144,31 +151,25 @@ class ScannerScreen extends StatelessWidget {
                   ),
                   icon: const Icon(Icons.keyboard),
                   label: const Text("Enter Student Number Manually"),
-                  onPressed: () {
-                    _showManualEntrySheet(context);
-                  },
+                  onPressed: () => showManualEntrySheet(context),
                 ),
               ),
-
               const SizedBox(height: 12),
               Expanded(
                 child: state.isLoading
-                    ? const Center(
-                  child: CircularProgressIndicator(),
-                )
+                    ? const Center(child: CircularProgressIndicator())
                     : MobileScanner(
-                  onDetect: state.isScanningEnable?(barcodeCapture) {
+                  onDetect: state.isScanningEnable
+                      ? (barcodeCapture) {
+                    if (barcodeCapture.barcodes.isEmpty) return;
+
                     final code = barcodeCapture.barcodes.first.rawValue;
-
-                    if (code != null) {
+                    if (code != null && code.isNotEmpty) {
                       debugPrint("📷 QR Scanned: $code");
-
-                      context
-                          .read<AttendanceBloc>()
-                          .add(QRScanned(code));
+                      context.read<AttendanceBloc>().add(QRScanned(code));
                     }
                   }
-                  : null,
+                      : null,
                 ),
               ),
             ],
